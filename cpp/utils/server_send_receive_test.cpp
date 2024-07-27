@@ -45,7 +45,7 @@ void send(){
 int main(int argc, char* argv[]) {
     try {
         if (argc != 2) {
-            cerr << "Usage: server <port>\n";
+            cerr << "Usage: ./server_send_receive_test <port>\n";
             return 1;
         }
 

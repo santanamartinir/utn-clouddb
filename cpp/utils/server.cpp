@@ -64,6 +64,22 @@ void wait_start_signal(boost::asio::io_context& io_context, short my_port) {
     boost::asio::write(socket, boost::asio::buffer(response, response.length()));
 }
 
+void receive_vec_from_server(boost::asio::io_context& io_context, int my_port, vector<joined_row> *pV){
+    tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), my_port));
+
+    tcp::socket socket(io_context);
+    acceptor.accept(socket);
+    boost::system::error_code error;
+
+    size_t length = socket.read_some(boost::asio::buffer(*pV), error);
+    print_raw_hex(*pV);
+    cout << "Received buffer w. length: " << length << endl;
+    int n_rows = length / sizeof(joined_row);
+    for(int i = 0; i < n_rows; i++){
+        cout << (*pV)[i].join_val  << " " << (*pV)[i].row_R << " " << (*pV)[i].row_S << endl;
+    }
+}
+
 int main(int argc, char* argv[]) {
     try {
         if (argc != 5) {
@@ -84,9 +100,9 @@ int main(int argc, char* argv[]) {
         string s_file = find_file_with_prefix(s_files, to_string(my_id));
         // debug: cout << s_file << endl;
 
-        vector<pair<int, uint64_t>> r_data = read_data(r_folder + '/' + r_file);
+        vector<joined_row> r_data = read_data(r_folder + '/' + r_file);
         cout << "R len: " << r_data.size() << endl;
-        vector<pair<int, uint64_t>> s_data = read_data(s_folder + '/' + s_file);
+        vector<joined_row> s_data = read_data(s_folder + '/' + s_file);
         cout << "S len: " << s_data.size() << endl;
 
         vector<pair<string, int>> config = readServerConfig(config_file);
@@ -115,7 +131,7 @@ int main(int argc, char* argv[]) {
         size_t length = socket.read_some(boost::asio::buffer(reply), error);
         cout << "Reply is: " << string(reply, length) << endl;
 
-
+        receive_vec_from_server(io_context, my_port, &s_data);
 
         wait_start_signal(io_context, my_port);
 

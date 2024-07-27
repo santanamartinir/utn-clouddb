@@ -15,14 +15,11 @@ class SpaceSaving:
         self.data_structure = data_structure
 
         # three different data structures
-        if data_structure == 'hash_table_only':
-            self.min_count = float('inf')
-            self.min_element = None
-        elif data_structure == 'heap':
+        if data_structure == 'heap':
             self.heap = []
         elif data_structure == 'sorted_array':
             self.sorted_list = []
-        else:
+        elif data_structure != 'hash_table_only':
             raise ValueError('Invalid data structure! Choose hash_table_only, heap or sorted_array.')
 
     # * Increment or Add *

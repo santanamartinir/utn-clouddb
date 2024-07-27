@@ -7,10 +7,10 @@
 #include <vector>
 #include <filesystem>
 #include "helper_functions.h"
-
+#include <algorithm>
 using boost::asio::ip::tcp;
 
-void wait_for_reads_acceptor(boost::asio::io_context& io_context, short port, int n_servers) {
+void wait_for_reads(boost::asio::io_context& io_context, short port, int n_servers) {
     cout << "before acceptor" << endl;
     tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), port));
     cout << "before socket" << endl;
@@ -71,6 +71,8 @@ void server(boost::asio::io_context& io_context, short port) {
     }
 }
 
+
+
 void start_other_servers(boost::asio::io_context& io_context, std::vector<std::pair<std::string, int>> config){
     auto n_servers = config.size() - 1;
 
@@ -92,6 +94,33 @@ void start_other_servers(boost::asio::io_context& io_context, std::vector<std::p
     }
 }
 
+void send_tuple_to_server(joined_row* pRow, string server_ip, string server_port){
+        boost::asio::io_context io_context;
+
+        tcp::resolver resolver(io_context);
+        tcp::resolver::results_type endpoints = resolver.resolve(server_ip, server_port);
+
+        tcp::socket socket(io_context);
+        boost::asio::connect(socket, endpoints);
+
+        boost::asio::write(socket, boost::asio::buffer(pRow, sizeof(joined_row)));
+}
+
+void send_vec_to_server(const vector<joined_row>& pV_jR, string server_ip, string server_port) {
+    boost::asio::io_context io_context;
+    tcp::resolver resolver(io_context);
+    tcp::resolver::results_type endpoints = resolver.resolve(server_ip, server_port);
+    tcp::socket socket(io_context);
+    boost::asio::connect(socket, endpoints);
+    boost::asio::write(socket, boost::asio::buffer(pV_jR.data(), pV_jR.size() * sizeof(joined_row))); // Correct
+}
+
+#if 0
+void send_vec_to_server(vector<joined_row>* pV_jR, int n_bytes, string server_ip, string server_port){
+        cout << "1" << endl;
+}
+#endif
+
 int main(int argc, char* argv[]) {
     try {
         if (argc != 5) {
@@ -112,9 +141,9 @@ int main(int argc, char* argv[]) {
         string s_file = find_file_with_prefix(s_files, to_string(my_id));
         // debug: cout << s_file << endl;
 
-        vector<pair<int, uint64_t>> r_data = read_data(r_folder + '/' + r_file);
+        auto r_data = read_data(r_folder + '/' + r_file);
         cout << "R len: " << r_data.size() << endl;
-        vector<pair<int, uint64_t>> s_data = read_data(s_folder + '/' + s_file);
+        auto s_data = read_data(s_folder + '/' + s_file);
         cout << "S len: " << s_data.size() << endl;
 
         vector<pair<string, int>> config = readServerConfig(config_file);
@@ -127,40 +156,42 @@ int main(int argc, char* argv[]) {
         boost::asio::io_context io_context;
         
         cout << "before wait" << endl;
-        wait_for_reads_acceptor(io_context, my_port, n_servers);
+        wait_for_reads(io_context, my_port, n_servers);
         cout << "after wait" << endl;
 
-        start_other_servers(io_context, config);
-
-        thread t1(server, ref(io_context), my_port);
-        for(;;){
-            string ip;
-            string port;
-            string msg;
-            
-            cout << "To send data, enter ip of receiver: ";
-            cin >> ip;
-
-            cout << "and its port: ";
-            cin >> port;
-
-            boost::asio::io_context io_context;
-
-            tcp::resolver resolver(io_context);
-            tcp::resolver::results_type endpoints = resolver.resolve(ip, port);
-
-            tcp::socket socket(io_context);
-            boost::asio::connect(socket, endpoints);
-
-            string message = "Hello from " + string(port);
-            boost::asio::write(socket, boost::asio::buffer(message));
-
-            char reply[1024];
-            size_t reply_length = boost::asio::read(socket, boost::asio::buffer(reply, message.size()));
-            cout << "Reply is: ";
-            cout.write(reply, reply_length);
-            cout << "\n";
+        // deb: print_raw_hex(s_data);
+        calculate_receiver_and_store(s_data, n_servers);
+        
+        // Print before sorting
+        cout << "Before sorting:" << endl;
+        for (const auto& row : s_data) {
+            cout << row.join_val << " " << row.row_R << " " << row.row_S << endl;
         }
+
+        // Sort the vector by row_S
+        std::sort(s_data.begin(), s_data.end(), compare_by_row_S);
+
+        // Print after sorting
+        cout << "After sorting:" << endl;
+        for (const auto& row : s_data) {
+            cout << row.join_val << " " << row.row_R << " " << row.row_S << endl;
+        }
+
+        auto  result = get_first_occurrence_and_count(s_data);
+
+        // Print the result
+        cout << "row_S, first occurrence index, and count:" << endl;
+        for (const auto& t : result) {
+            cout << "row_S: " << get<0>(t)
+                << ", first occurrence index: " << get<1>(t)
+                << ", count: " << get<2>(t) << endl;
+        }
+
+        send_vec_to_server(s_data, config[1].first, to_string(config[1].second));
+
+        //start_other_servers(io_context, config);
+
+
 
     } catch (exception& e) {
         cerr << "Exception: " << e.what() << "\n";

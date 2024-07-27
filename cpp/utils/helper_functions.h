@@ -24,3 +24,9 @@ void print_raw_hex(const vector<joined_row>& v);
 bool compare_by_row_S(const joined_row& a, const joined_row& b);
 void calculate_receiver_and_store(vector<joined_row>& rows, uint32_t n);
 vector<tuple<uint32_t, size_t, size_t>> get_first_occurrence_and_count(const vector<joined_row>& sorted_rows);
+void send_data_to_all_servers(
+    int my_id,
+    const vector<pair<string, int>>& config,
+    const vector<joined_row>& data,
+    const vector<tuple<uint32_t, size_t, size_t>>& mem_locations);
+void send_vec_to_server(const vector<joined_row>& pV_jR, string server_ip, string server_port, size_t offset, size_t number);

@@ -1,6 +1,8 @@
 #include "helper_functions.h"
 #include <iomanip>
 
+using boost::asio::ip::tcp;
+
 vector<pair<string, int>> readServerConfig(const string &filename) {
     vector<pair<string, int>> serverConfig;
     ifstream file(filename);
@@ -114,3 +116,62 @@ vector<tuple<uint32_t, size_t, size_t>> get_first_occurrence_and_count(const vec
 
     return result;
 }
+
+void send_data_to_all_servers(
+    int my_id,
+    const vector<pair<string, int>>& config,
+    const vector<joined_row>& data,
+    const vector<tuple<uint32_t, size_t, size_t>>& mem_locations) {
+
+    // Check that the number of servers matches the number of memory locations
+    assert(config.size() == mem_locations.size());
+
+    // Iterate over all servers
+    for (size_t idx_serv = 0; idx_serv < config.size(); ++idx_serv) {
+
+        // Skip sending data to the server if my_id matches idx_serv
+        if (my_id == static_cast<int>(idx_serv + 1)) {
+            continue;
+        }
+
+        // Get the server's IP and port from the config
+        const auto& server_info = config[idx_serv];
+        const string& server_ip = server_info.first;
+        const int server_port = server_info.second;
+
+        // Get the offset and count from mem_locations
+        const auto& mem_info = mem_locations[idx_serv];
+        const size_t offset = std::get<1>(mem_info);
+        const size_t number = std::get<2>(mem_info);
+
+        // Print server info for debugging
+        cout << "Sending data to server: " << server_ip << ":" << server_port << endl;
+        cout << "Offset: " << offset << ", Number: " << number << endl;
+
+        // Send the chunk of data to the server
+        send_vec_to_server(data, server_ip, to_string(server_port), offset, number);
+    }
+}
+
+void send_vec_to_server(const vector<joined_row>& pV_jR, string server_ip, string server_port, size_t offset, size_t number) {
+    // Ensure the offset and number are within the bounds of the vector
+    if (offset >= pV_jR.size()) {
+        throw std::out_of_range("Offset is out of range.");
+    }
+    if (offset + number > pV_jR.size()) {
+        number = pV_jR.size() - offset;  // Adjust number to send till the end of the vector
+    }
+
+    boost::asio::io_context io_context;
+    tcp::resolver resolver(io_context);
+    tcp::resolver::results_type endpoints = resolver.resolve(server_ip, server_port);
+    tcp::socket socket(io_context);
+    boost::asio::connect(socket, endpoints);
+
+    // Calculate the number of bytes to send
+    size_t bytes_to_send = number * sizeof(joined_row);
+
+    // Send the chunk of the vector
+    boost::asio::write(socket, boost::asio::buffer(pV_jR.data() + offset, bytes_to_send));
+}
+

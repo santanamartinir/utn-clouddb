@@ -64,19 +64,48 @@ void wait_start_signal(boost::asio::io_context& io_context, short my_port) {
     boost::asio::write(socket, boost::asio::buffer(response, response.length()));
 }
 
-void receive_vec_from_server(boost::asio::io_context& io_context, int my_port, vector<joined_row> *pV){
+int receive_vec_from_one_server(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, size_t offset) {
     tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), my_port));
-
     tcp::socket socket(io_context);
     acceptor.accept(socket);
+
     boost::system::error_code error;
 
-    size_t length = socket.read_some(boost::asio::buffer(*pV), error);
-    print_raw_hex(*pV);
+    // Calculate the starting position in the buffer
+    char* start_pos = reinterpret_cast<char*>(data_buffer.data()) + offset * sizeof(joined_row);
+
+    // Calculate the remaining space in the buffer from the offset
+    size_t remaining_space = (data_buffer.size() * sizeof(joined_row)) - offset * sizeof(joined_row);
+
+    // Ensure there is space to read into
+    if (remaining_space == 0) {
+        throw std::runtime_error("No space left in the buffer to read data.");
+    }
+
+    size_t length = socket.read_some(boost::asio::buffer(start_pos, remaining_space), error);
+
+    if (error == boost::asio::error::eof) {
+        cout << "Connection closed cleanly by peer.\n";
+    } else if (error) {
+        throw boost::system::system_error(error); // Some other error.
+    }
+
     cout << "Received buffer w. length: " << length << endl;
     int n_rows = length / sizeof(joined_row);
-    for(int i = 0; i < n_rows; i++){
-        cout << (*pV)[i].join_val  << " " << (*pV)[i].row_R << " " << (*pV)[i].row_S << endl;
+    for (int i = 0; i < n_rows; i++) {
+        cout << data_buffer[offset + i].join_val << " " << data_buffer[offset + i].row_R << " " << data_buffer[offset + i].row_S << endl;
+    }
+
+    return length;
+}
+
+void receive_data_from_all_servers(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, int my_id, int n_servers) {
+    int offset = 0;
+    for (int i = 0; i < n_servers; ++i) {
+        if (i + 1 != my_id) {  // Skip own server
+            cout << "Receiving data from server " << i + 1 << endl;
+            offset += receive_vec_from_one_server(io_context, my_port, data_buffer, offset);
+        }
     }
 }
 
@@ -131,7 +160,7 @@ int main(int argc, char* argv[]) {
         size_t length = socket.read_some(boost::asio::buffer(reply), error);
         cout << "Reply is: " << string(reply, length) << endl;
 
-        receive_vec_from_server(io_context, my_port, &s_data);
+        receive_data_from_all_servers(io_context, my_port, s_data, my_id, n_servers);
 
         wait_start_signal(io_context, my_port);
 

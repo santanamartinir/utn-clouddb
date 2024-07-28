@@ -1,53 +1,64 @@
 #include <iostream>
-#include <boost/asio.hpp>
-#include <thread>
-#include <string>
-#include <utility>
-#include <fstream>
+#include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include <filesystem>
 #include "helper_functions.h"
 #include "SpaceSaving.h"
-#include <algorithm>
 
 struct tuples_data {
     std::vector<joined_row> tuples;
     int filled_rows;
 };
 
-int copy_local_data_to_receive_buffers(
+int copy_local_data_to_s_receive_buffers(
         int my_id,
         const tuples_data& s_data_send,
         std::vector<tuples_data>& s_data_receive,
-        const std::vector<std::tuple<uint32_t,
-        size_t, size_t>>& memory_locations,
-        std::vector<std::pair<int, std::pair<int, float>>> heavy_hitters) {
+        const std::unordered_map<int, float>& heavy_hitters) {
 
-    int i = 0;
     int n_tuples_copied = 0;
 
-    for (const auto& [server_id, offset, count] : memory_locations) {
-        bool is_not_heavy_hitter = true;
-        if (offset + count > s_data_send.tuples.size()) {
-            throw std::out_of_range("Offset and count exceed the size of s_data_send");
+    // Copy/send only, if it is not a heavy hitter
+    for(const auto& t : s_data_send.tuples) {
+        if (heavy_hitters.find(t.join_val) == heavy_hitters.end()) {
+            s_data_receive[t.row_S - 1].tuples[s_data_receive[t.row_S - 1].filled_rows] = t;
+            s_data_receive[t.row_S - 1].filled_rows++;
+            n_tuples_copied++;
         }
+        else { // if it is a heavy hitter, it stays on this server
+            s_data_receive[my_id].tuples[s_data_receive[my_id].filled_rows] = t;
+            s_data_receive[my_id].filled_rows++;
+        }
+    }
 
-        for(auto h : heavy_hitters){
-            if(s_data_send.tuples[offset].join_val == h.first)
-            {
-                is_not_heavy_hitter = false;
-            }
-        }
+    return n_tuples_copied;
+}
 
-        if( is_not_heavy_hitter ){
-            // Copy the data from s_data_send to the beginning of s_data_receive
-            std::copy(s_data_send.tuples.begin() + offset, s_data_send.tuples.begin() + offset + count, s_data_receive[i].tuples.begin() + s_data_receive[i].filled_rows);
-            s_data_receive[i].filled_rows += count;
-            if(my_id != i) { // own files do not need to be sent over the network
-                n_tuples_copied += count;
+int copy_local_data_to_r_receive_buffers(
+        int my_id,
+        const tuples_data& r_data_send,
+        std::vector<tuples_data>& r_data_receive,
+        const std::unordered_map<int, float>& heavy_hitters) {
+
+    int n_tuples_copied = 0;
+
+    for (const auto& t : r_data_send.tuples) {
+        if (heavy_hitters.find(t.join_val) != heavy_hitters.end()) {
+            // If it's a heavy hitter, copy to all other servers
+            for (int i = 0; i < r_data_receive.size(); ++i) {
+                    r_data_receive[i].tuples[r_data_receive[i].filled_rows] = t;
+                    r_data_receive[i].filled_rows++;
+                if (i != my_id) { // Count only when actually sent
+                    n_tuples_copied++;
+                }
             }
+        } else {
+            // Otherwise, copy to the corresponding server
+            r_data_receive[t.row_S - 1].tuples[r_data_receive[t.row_S - 1].filled_rows] = t;
+            r_data_receive[t.row_S - 1].filled_rows++;
+            n_tuples_copied++;
         }
-        i++;
     }
 
     return n_tuples_copied;
@@ -123,16 +134,16 @@ int main(int argc, char* argv[]) {
         auto heavy_hitters = ss.get_heavy_hitters(threshold);
 
         std::cout << "Heavy Hitters:" << std::endl;
-        for (const auto& [element, data] : heavy_hitters) {
-            std::cout << "Element: " << element << ", Count: " << data.first << ", Frequency: " << data.second * 100 << "%" << std::endl;
+        for (const auto& [element, frequency] : heavy_hitters) {
+            std::cout << "Element: " << element << ", Frequency: " << frequency * 100 << "%" << std::endl;
         }
 
         for(int i = 0; i < n_servers; i++ ) {
             // Process local data
             calculate_receiver_and_store(s_data_send[i].tuples, n_servers); // Stores server id in third col
-            std::sort(s_data_send[i].tuples.begin(), s_data_send[i].tuples.end(), compare_by_row_S); // Sort by third col
-            auto memory_locations = get_first_occurrence_and_count(s_data_send[i].tuples); // Get memory locations and lengths of specific server data
-            num_tuples_sent += copy_local_data_to_receive_buffers(i, s_data_send[i], s_data_receive, memory_locations, heavy_hitters);    
+            calculate_receiver_and_store(r_data_send[i].tuples, n_servers); // Stores server id in third col
+            num_tuples_sent += copy_local_data_to_s_receive_buffers(i, s_data_send[i], s_data_receive, heavy_hitters);
+            num_tuples_sent += copy_local_data_to_r_receive_buffers(i, r_data_send[i], r_data_receive, heavy_hitters); 
         }
     
     } catch (std::exception& e) {

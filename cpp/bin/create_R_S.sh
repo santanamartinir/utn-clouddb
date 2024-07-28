@@ -27,17 +27,17 @@ s_zipf_file="S_${zipf_file}"
 
 # Create S table with additional float column
 ./add_row_numbers $zipf_file S
-
-
+# # Split S into sub-files according to number of servers
 ./split_file $s_zipf_file $n_servers
 
-# filenames for R
+# Create filenames for the generated R data files
 gen_r_file="${n_unique}.txt"
 r_file="R_${gen_r_file}"
 
 # Generate R
 ./gen_R $n_unique
-./add_row_numbers $gen_r_file R
 
-# Split S into sub-files according to number of servers
+# Create R table with additional float column
+./add_row_numbers $gen_r_file R
+# Split R into sub-files according to number of servers
 ./split_file $r_file $n_servers

@@ -21,12 +21,15 @@ int copy_local_data_to_s_receive_buffers(
 
     // Copy/send only, if it is not a heavy hitter
     for(const auto& t : s_data_send.tuples) {
+        // Check if the tuple is not a heavy hitter
         if (heavy_hitters.find(t.join_val) == heavy_hitters.end()) {
+            // Copy to the receive buffer corresponding to the target row
             s_data_receive[t.row_S - 1].tuples[s_data_receive[t.row_S - 1].filled_rows] = t;
             s_data_receive[t.row_S - 1].filled_rows++;
             n_tuples_copied++;
         }
-        else { // if it is a heavy hitter, it stays on this server
+        // if it is a heavy hitter, it stays on this server
+        else {
             s_data_receive[my_id].tuples[s_data_receive[my_id].filled_rows] = t;
             s_data_receive[my_id].filled_rows++;
         }
@@ -44,17 +47,19 @@ int copy_local_data_to_r_receive_buffers(
     int n_tuples_copied = 0;
 
     for (const auto& t : r_data_send.tuples) {
+        // Check if the tuple is a heavy hitter
         if (heavy_hitters.find(t.join_val) != heavy_hitters.end()) {
             // If it's a heavy hitter, copy to all other servers
             for (int i = 0; i < r_data_receive.size(); ++i) {
                     r_data_receive[i].tuples[r_data_receive[i].filled_rows] = t;
                     r_data_receive[i].filled_rows++;
-                if (i != my_id) { // Count only when actually sent
+                // Count only when actually sent
+                if (i != my_id) {
                     n_tuples_copied++;
                 }
             }
+        // Otherwise, copy to the corresponding server
         } else {
-            // Otherwise, copy to the corresponding server
             r_data_receive[t.row_S - 1].tuples[r_data_receive[t.row_S - 1].filled_rows] = t;
             r_data_receive[t.row_S - 1].filled_rows++;
             n_tuples_copied++;
@@ -76,20 +81,23 @@ void allocate_mem_dual_vec(std::vector<tuples_data>& vec, size_t outer_size, siz
     }
 }
 
+// Main function
 int main(int argc, char* argv[]) {
     try {
+        // Check if the number of arguments is correct
         if (argc != 6) {
             std::cerr << "Usage: ./server <n_servers> <num_r_tuples> <num_s_tuples> <R_folder> <S_folder>\n";
             return 1;
         }
 
-        // Get Arguments
+        // Get arguments
         int n_servers = std::atoi(argv[1]);
         int num_r_tuples = std::atoi(argv[2]);
         int num_s_tuples = std::atoi(argv[3]);
         std::string r_folder = argv[4];
         std::string s_folder = argv[5];
 
+        // Initialize vectors
         std::vector<tuples_data> r_data_send;
         allocate_mem_dual_vec(r_data_send, n_servers, num_r_tuples);
         std::vector<tuples_data> s_data_send;
@@ -102,11 +110,13 @@ int main(int argc, char* argv[]) {
         uint32_t num_tuples_sent = 0;
         std::vector<int> sample_stream;
 
+        // Loop over each server to process local data
         for(int i = 0; i < n_servers; i++ ) {
             // Get and find files
             auto r_files = get_all_files_in_directory(r_folder);
             auto s_files = get_all_files_in_directory(s_folder);
-
+            
+            // Find files for this server
             std::string r_file = find_file_with_prefix(r_files, std::to_string(i + 1));
             std::string s_file = find_file_with_prefix(s_files, std::to_string(i + 1));
 
@@ -126,20 +136,21 @@ int main(int argc, char* argv[]) {
         }
 
         // Estimate heavy hitters using SpaceSaving algorithm
-        int k = 128;  // capacity of the histogram for heavy hitter detection
+        int k = 128;  // Capacity of the histogram for heavy hitter detection
         SpaceSaving ss(k);
         ss.process(sample_stream);
 
-        float threshold = 0.01; // Define a threshold
+        float threshold = 0.01;  // Define a threshold
         auto heavy_hitters = ss.get_heavy_hitters(threshold);
 
+        // Print detected heavy hitters
         std::cout << "Heavy Hitters:" << std::endl;
         for (const auto& [element, frequency] : heavy_hitters) {
             std::cout << "Element: " << element << ", Frequency: " << frequency * 100 << "%" << std::endl;
         }
 
+        // Process local data
         for(int i = 0; i < n_servers; i++ ) {
-            // Process local data
             calculate_receiver_and_store(s_data_send[i].tuples, n_servers); // Stores server id in third col
             calculate_receiver_and_store(r_data_send[i].tuples, n_servers); // Stores server id in third col
             num_tuples_sent += copy_local_data_to_s_receive_buffers(i, s_data_send[i], s_data_receive, heavy_hitters);

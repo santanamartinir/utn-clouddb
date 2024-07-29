@@ -23,7 +23,9 @@ int copy_local_data_to_s_receive_buffers(
             // Copy to the receive buffer corresponding to the target row
             s_data_receive[t.row_S - 1].tuples[s_data_receive[t.row_S - 1].filled_rows] = t;
             s_data_receive[t.row_S - 1].filled_rows++;
-            n_tuples_copied++;
+            if((t.row_S - 1) != my_id){ // Only count if not sent/copied to other servers
+                n_tuples_copied++;
+            }
         }
         // if it is a heavy hitter, it stays on this server
         else {
@@ -104,7 +106,9 @@ int main(int argc, char* argv[]) {
         std::vector<tuples_data> s_data_receive;
         allocate_mem_dual_vec(s_data_receive, n_servers, num_s_tuples);
 
-        uint32_t num_tuples_sent = 0;
+        uint32_t num_s_tuples_sent = 0;
+        uint32_t num_r_tuples_sent = 0;
+
         std::vector<int> sample_stream;
 
         // Loop over each server to process local data
@@ -152,8 +156,8 @@ int main(int argc, char* argv[]) {
         for(int i = 0; i < n_servers; i++ ) {
             calculate_receiver_and_store(s_data_send[i].tuples, n_servers); // Stores server id in third col
             calculate_receiver_and_store(r_data_send[i].tuples, n_servers); // Stores server id in third col
-            num_tuples_sent += copy_local_data_to_s_receive_buffers(i, s_data_send[i], s_data_receive, heavy_hitters);
-            num_tuples_sent += copy_local_data_to_r_receive_buffers(i, r_data_send[i], r_data_receive, heavy_hitters); 
+            num_s_tuples_sent += copy_local_data_to_s_receive_buffers(i, s_data_send[i], s_data_receive, heavy_hitters);
+            num_r_tuples_sent += copy_local_data_to_r_receive_buffers(i, r_data_send[i], r_data_receive, heavy_hitters); 
         }
 
         // Open a file to save execution times

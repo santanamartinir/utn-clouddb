@@ -3,8 +3,10 @@
 #include <vector>
 #include <algorithm>
 #include <filesystem>
+#include <chrono>  // for high_resolution_clock
 #include "helper_functions.h"
 #include "SpaceSaving.h"
+#include "inner_join.h"
 
 struct tuples_data {
     std::vector<joined_row> tuples;
@@ -155,6 +157,16 @@ int main(int argc, char* argv[]) {
             calculate_receiver_and_store(r_data_send[i].tuples, n_servers); // Stores server id in third col
             num_tuples_sent += copy_local_data_to_s_receive_buffers(i, s_data_send[i], s_data_receive, heavy_hitters);
             num_tuples_sent += copy_local_data_to_r_receive_buffers(i, r_data_send[i], r_data_receive, heavy_hitters); 
+        }
+
+        for(int i = 0; i < n_servers; i++){
+            auto start = std::chrono::high_resolution_clock::now();
+            auto r_join_s[i] = inner_join(r_data_receive[i], s_data_receive[i]);
+            auto finish = std::chrono::high_resolution_clock::now();
+
+            // Calculate and print execution time
+            std::chrono::duration<double> elapsed = finish - start;
+            std::cout << "Server " << i << " inner join took " << elapsed.count() << " seconds.\n";
         }
     
     } catch (std::exception& e) {

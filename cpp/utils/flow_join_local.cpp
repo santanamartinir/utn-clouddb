@@ -6,7 +6,7 @@
 #include <chrono>  // for high_resolution_clock
 #include "helper_functions.h"
 #include "SpaceSaving.h"
-#include "inner_join.h"
+#include "join.h"
 
 struct tuples_data {
     std::vector<joined_row> tuples;
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
             s_data_send[i].filled_rows = s_data_send_tmp.size();
 
             // Sample 1% of r_data_send_tmp to estimate heavy hitters
-            for (size_t j = 0; j < s_data_send_tmp.size(); j += 1) {
+            for (size_t j = 0; j < s_data_send_tmp.size(); j += 100) {  // Previously j += 1
                 sample_stream.push_back(s_data_send_tmp[j].join_val);
             }
         }

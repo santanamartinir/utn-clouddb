@@ -16,6 +16,11 @@ struct joined_row{
     uint32_t row_S;
 };
 
+struct tuples_data {
+    std::vector<joined_row> tuples;
+    int filled_rows;
+};
+
 vector<pair<string, int>> readServerConfig(const string &filename);
 vector<string> get_all_files_in_directory(const string& directory_path);
 string find_file_with_prefix(const vector<string>& file_names, const string& prefix);
@@ -32,3 +37,4 @@ void send_data_to_all_servers(
 void send_vec_to_server(const vector<joined_row>& pV_jR, string server_ip, string server_port, size_t offset, size_t number);
 int receive_vec_from_one_server(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, size_t offset);
 void receive_data_from_all_servers(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, int my_id, int n_servers);
+std::vector<joined_row> inner_join(const tuples_data& r_data, const tuples_data& s_data);

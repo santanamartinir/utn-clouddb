@@ -23,15 +23,13 @@ public:
         calculate_frequencies();
     }
 
-    std::vector<std::pair<int, std::pair<int, float>>> get_heavy_hitters(float threshold) const {
-        std::vector<std::pair<int, std::pair<int, float>>> heavy_hitters;
+    std::unordered_map<int, float> get_heavy_hitters(float threshold) const {
+        std::unordered_map<int, float> heavy_hitters;
         for (const auto& counter : counters) {
             if (counter.second.second > threshold) {
-                heavy_hitters.push_back(counter);
+                heavy_hitters[counter.first] = counter.second.second;
             }
         }
-        std::sort(heavy_hitters.begin(), heavy_hitters.end(),
-                  [](const auto& l, const auto& r) { return l.second.first > r.second.first; });
         return heavy_hitters;
     }
 

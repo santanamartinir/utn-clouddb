@@ -224,3 +224,29 @@ void receive_data_from_all_servers(boost::asio::io_context& io_context, int my_p
         }
     }
 }
+
+// Implementation of the inner_join function
+std::vector<joined_row> inner_join(const tuples_data& r_data, const tuples_data& s_data) {
+    std::vector<joined_row> result;
+    std::unordered_map<int, std::vector<joined_row>> hashTable;  // Map to store the rows of r_data using the union value as key
+
+    // Build the table from the data in r_data
+    for (const auto& row : r_data.tuples) {
+        hashTable[row.join_val].push_back(row);  // Insert row into hash table with join_val as key
+    }
+
+    // Process s_data and perform join
+    for (const auto& row : s_data.tuples) {
+        auto it = hashTable.find(row.join_val);
+        // If the join_val is found in the hash table
+        if (it != hashTable.end()) {
+            for (const auto& r_row : it->second) { 
+                joined_row joined;
+                joined.join_val = row.join_val;
+                result.push_back(joined);
+            }
+        }
+    }
+
+    return result;
+}

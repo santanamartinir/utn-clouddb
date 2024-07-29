@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
 
         for(int i = 0; i < n_servers; i++){
             auto start = std::chrono::high_resolution_clock::now();
-            auto r_join_s = inner_join(r_data_receive[i], s_data_receive[i]);
+            auto r_join_s = inner_join(r_data_receive[i].tuples, s_data_receive[i].tuples);
             auto finish = std::chrono::high_resolution_clock::now();
 
             // Calculate and print execution time

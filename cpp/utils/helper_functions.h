@@ -37,4 +37,4 @@ void send_data_to_all_servers(
 void send_vec_to_server(const vector<joined_row>& pV_jR, string server_ip, string server_port, size_t offset, size_t number);
 int receive_vec_from_one_server(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, size_t offset);
 void receive_data_from_all_servers(boost::asio::io_context& io_context, int my_port, vector<joined_row>& data_buffer, int my_id, int n_servers);
-std::vector<joined_row> inner_join(const tuples_data& r_data, const tuples_data& s_data);
+std::vector<joined_row> inner_join(const vector<joined_row>& r_data, const vector<joined_row>& s_data);

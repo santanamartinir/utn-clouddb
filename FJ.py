@@ -1,61 +1,103 @@
-import partition as p
+import os
+
 import heavy_hitter_detection as hh
-import adaptive_redistribution as ar
+import adaptive_redistribution as adr
 
-def read_data(file_name):
-    with open(file_name, 'r') as f:
-        data = [int(line.strip()) for line in f]
-    return [(d, str(d)) for d in data]
+# l. 8- 14, https://stackoverflow.com/questions/22302345/reading-a-file-in-python-for-text
+# Accesed on 28/07/2024 
+def read_data(file_path):
+    data = []
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                key, value = line.strip().split()  # Split line into key and value
+                data.append((int(key), int(value)))  # Append as a tuple
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+    return data
 
-def flow_join(data1, data2, num_partitions, k, data_structure):
-    partitions1 = p.partition_data(data1, num_partitions)  # Particionamos data1
-    partitions2 = p.partition_data(data2, num_partitions)  # Particionamos data2
-    
-    ss1 = hh.SpaceSaving(k, data_structure)  # Creamos instancia de SpaceSaving para data1
-    ss2 = hh.SpaceSaving(k, data_structure)  # Creamos instancia de SpaceSaving para data2
-    
-    ss1.process([key for key, value in data1])  # Procesamos claves de data1
-    ss2.process([key for key, value in data2])  # Procesamos claves de data2
-    
-    # heavy_hitters1 = set(key for key, count in ss1.get_heavy_hitters())  # Obtenemos heavy hitters de data1
-    # heavy_hitters2 = set(key for key, count in ss2.get_heavy_hitters())  # Obtenemos heavy hitters de data2
-    
-    heavy_hitters1 = set(ss1.counters.keys())
-    heavy_hitters2 = set(ss2.counters.keys())
+def load_partitions(base_path, prefix, num_partitions):
+    partitions = {}
+    for i in range(num_partitions):
+        file_path = os.path.join(base_path, f"{i+1}_{prefix}.txt")
+        print(f"Loading partition from file {file_path}...")
+        partitions[i] = read_data(file_path)
+    print(f"Loaded {num_partitions} partitions.")
+    return partitions
 
-    print(f"Heavy hitters de data1: {heavy_hitters1}")
-    print(f"Heavy hitters de data2: {heavy_hitters2}")
-    
-    heavy_hitters = heavy_hitters1.union(heavy_hitters2)  # Unimos heavy hitters de data1 y data2
-    print(f"Heavy hitters combinados: {heavy_hitters}")
+def perform_join(R_partitions, S_partitions):
+    print("Performing join operation...")
+    result = []
+    # Iterate over each partition of R
+    for r_partition in R_partitions.values():
+        # Iterate over each partition of S
+        for s_partition in S_partitions.values():
+            # Perform the join operation:
+            # - For each tuple (r_key, _) in the current R partition
+            # - For each tuple (s_key, s_value) in the current S partition
+            # - If the keys (r_key and s_key) match, create a tuple (r_key, s_value)
+            # - Collect all such tuples in join_result
+            join_result = [(r_key, s_value) for r_key, _ in r_partition for s_key, s_value in s_partition if r_key == s_key]
+            # Extend the result list with the tuples found in join_result
+            result.extend(join_result)
+            print(f"Join result for partitions: {join_result}")
+    result = list(set(result))  # Avoid duplicates
+    print(f"Join operation complete. Number of results: {len(result)}")
+    return result
 
-    redistributed_partitions1 = ar.selective_broadcast(partitions1, heavy_hitters)  # Redistribuimos particiones de data1
-    redistributed_partitions2 = ar.selective_broadcast(partitions2, heavy_hitters)  # Redistribuimos particiones de data2
-    
-    joined_data =  set()  # Conjunto para almacenar los resultados del join
-    for partition in range(num_partitions):
-        # tuples1 = {key: value for key, value in redistributed_partitions1[partition]}  # Diccionario de tuplas de partición 1
-        # tuples2 = {key: value for key, value in redistributed_partitions2[partition]}  # Diccionario de tuplas de partición 2
-        tuples1 = dict(redistributed_partitions1[partition])
-        tuples2 = dict(redistributed_partitions2[partition])
-        for key in tuples1:
-            if key in tuples2:  # Si la clave está en ambas particiones
-                joined_data.add((key, tuples1[key], tuples2[key]))  # Añadimos la tupla resultante al join
-    
-    print(f"Datos del join: {joined_data}") 
-    return joined_data  # Devolvemos los datos del join
+def flow_join(R_base_path, S_base_path, num_partitions, k, skew_threshold, data_structure):
+    print("Starting Flow-Join...")
 
-# Ejemplo
-# data1_file = "zipf_1_1p0_1000_10.txt"
-# data2_file = "zipf_2_1p0_1000_10.txt"  # Usando el mismo archivo para ambos conjuntos de datos
-# data1 = read_data(data1_file)
-# data2 = read_data(data2_file)
-
-data1 = [(1, 'A'), (1, 'B'), (161, 'C'), (17, 'D'), (30, 'E'), (3, 'F'), (1, 'G'), (90, 'H'), (91, 'I'), (614, 'J')]
-data2 = [(1, 'K'), (4, 'L'), (26, 'M'), (539, 'N'), (1, 'O'), (15, 'P'), (1, 'Q'), (8, 'R'), (8, 'S'), (376, 'T')]
+    print("Loading partitions with prefix 'R_16'...")
+    R_partitions = load_partitions(R_base_path, 'R_16', num_partitions)
     
-num_partitions = 3
-k = 2
-data_structure = 'heap'
-joined_data = flow_join(data1, data2, num_partitions, k, data_structure)
-print(f"Resultado final del join: {joined_data}")
+    print("Loading partitions with prefix 'S_zipf_9_1p25_16_256'...")
+    S_partitions = load_partitions(S_base_path, 'S_zipf_9_1p25_16_256', num_partitions)
+
+    # Initialize SpaceSaving for R and S partitions
+    print("Estimating histograms for R partitions...")
+    R_histograms = {}
+    R_ss = hh.SpaceSaving(k, data_structure)
+    for i, partition in R_partitions.items():
+        R_ss.process([key for key, _ in partition])
+        R_histograms[i] = R_ss.get_heavy_hitters()
+    
+    print("Estimating histograms for S partitions...")
+    S_histograms = {}
+    S_ss = hh.SpaceSaving(k, data_structure)
+    for i, partition in S_partitions.items():
+        S_ss.process([key for key, _ in partition])
+        S_histograms[i] = S_ss.get_heavy_hitters()
+
+    # Detect heavy hitters
+    print("Detecting heavy hitters for R partitions...")
+    heavy_hitters_R = set()
+    for hitters in R_histograms.values():
+        heavy_hitters_R.update([key for key, _ in hitters if _ >= skew_threshold])
+
+    print("Detecting heavy hitters for S partitions...")
+    heavy_hitters_S = set()
+    for hitters in S_histograms.values():
+        heavy_hitters_S.update([key for key, _ in hitters if _ >= skew_threshold])
+
+    # Redistribute data based on heavy hitters
+    broadcasted_R, kept_local_S = adr.selective_broadcast(R_partitions, S_partitions, heavy_hitters_R)
+
+    # Perform join operation
+    result = list(set(perform_join(broadcasted_R, kept_local_S)))  # Avoid duplicates
+    print("Join Result:", result)
+
+    print("Flow-Join complete.")
+
+# Main
+R_base_path = "C:/Users/irene/Documents/UTN/CloudDB/utn-clouddb/cpp/bin/R_16"
+S_base_path = "C:/Users/irene/Documents/UTN/CloudDB/utn-clouddb/cpp/bin/S_zipf_9_1p25_16_256"
+
+num_partitions = 4
+k = 3
+skew_threshold = 3
+data_structure = "hash_table_only"  # Choose 'hash_table_only', 'heap', or 'sorted_array'
+
+flow_join(R_base_path, S_base_path, num_partitions, k, skew_threshold, data_structure)

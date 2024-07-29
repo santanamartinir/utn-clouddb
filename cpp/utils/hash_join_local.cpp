@@ -9,11 +9,6 @@
 #include "helper_functions.h"
 #include <algorithm>
 
-struct tuples_data{
-    vector<joined_row> tuples;
-    int filled_rows;
-};
-
 int copy_local_data_to_receive_buffers(int my_id, const tuples_data& s_data_send, vector<tuples_data>& s_data_receive, const vector<tuple<uint32_t, size_t, size_t>>& memory_locations) {
 
     int i = 0;

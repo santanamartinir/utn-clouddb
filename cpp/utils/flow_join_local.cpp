@@ -3,7 +3,8 @@
 #include <vector>
 #include <algorithm>
 #include <filesystem>
-#include <chrono>  // for high_resolution_clock
+#include <fstream>
+#include <chrono>
 #include "helper_functions.h"
 #include "SpaceSaving.h"
 #include "join.h"
@@ -159,6 +160,13 @@ int main(int argc, char* argv[]) {
             num_tuples_sent += copy_local_data_to_r_receive_buffers(i, r_data_send[i], r_data_receive, heavy_hitters); 
         }
 
+        // Open a file to save execution times
+        std::ofstream output_file("execution_times.txt");
+        if (!output_file.is_open()) {
+            std::cerr << "Failed to open file for writing execution times.\n";
+            return 1;
+        }
+
         for(int i = 0; i < n_servers; i++){
             auto start = std::chrono::high_resolution_clock::now();
             auto r_join_s[i] = inner_join(r_data_receive[i], s_data_receive[i]);
@@ -167,7 +175,12 @@ int main(int argc, char* argv[]) {
             // Calculate and print execution time
             std::chrono::duration<double> elapsed = finish - start;
             std::cout << "Server " << i << " inner join took " << elapsed.count() << " seconds.\n";
+
+            // Save the execution time to the file
+            output_file << "Server " << i << ": " << elapsed.count() << " seconds\n";
         }
+
+        outFile.close();  // Close the file
     
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";

@@ -27,7 +27,7 @@ def update_rate(k, data_structure, distinct_values_list):
 k = 128
 distinct_values_list = [2**i for i in range(1, 16)]
 
-# Update rates for the data structures
+# Update rates for data structures
 update_rates_hash_table = update_rate(k, 'hash_table_only', distinct_values_list)
 update_rates_heap = update_rate(k, 'heap', distinct_values_list)
 update_rates_sorted_array = update_rate(k, 'sorted_array', distinct_values_list)
@@ -39,7 +39,8 @@ plt.plot(distinct_values_list, update_rates_heap, marker='s', label='min-heap')
 plt.plot(distinct_values_list, update_rates_sorted_array, marker='^', label='sorted array')
 plt.xscale('log', base=2)
 plt.xticks(distinct_values_list)
-plt.yscale('log', base=10)
+plt.yscale('linear')
+# plt.yscale('log', base=10)
 plt.xlabel('distinct values')
 plt.ylabel('updates/s')
 plt.title('Single-threaded update rate, k = 128')

@@ -37,12 +37,12 @@ int main() {
         distinct_values_list.push_back(1 << i);
     }
 
-    // Update rates for the data structures
+    // Update rates for data structures
     auto update_rates_hash_table = update_rate(k, SpaceSaving::HashTableOnly, distinct_values_list);
     auto update_rates_heap = update_rate(k, SpaceSaving::Heap, distinct_values_list);
     auto update_rates_sorted_array = update_rate(k, SpaceSaving::SortedArray, distinct_values_list);
 
-    // Output results to file
+    // Output results
     std::ofstream output_file("../../python/update_rates.txt");
     output_file << "distinct_values hash_table heap sorted_array\n";
     for (size_t i = 0; i < distinct_values_list.size(); ++i) {

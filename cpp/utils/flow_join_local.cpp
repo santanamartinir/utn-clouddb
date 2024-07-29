@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     try {
         // Check if the number of arguments is correct
         if (argc != 6) {
-            std::cerr << "Usage: ./server <n_servers> <num_r_tuples> <num_s_tuples> <R_folder> <S_folder>\n";
+            std::cerr << "Usage: ./flow_join_local <n_servers> <num_r_tuples> <num_s_tuples> <R_folder> <S_folder>\n";
             return 1;
         }
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Estimate heavy hitters using SpaceSaving algorithm
-        SpaceSaving::DataStructure ds = SpaceSaving::HashTableOnly;
+        SpaceSaving::DataStructure ds = SpaceSaving::Heap;
         int k = 128;  // Capacity of the histogram for heavy hitter detection
         SpaceSaving ss(k, ds);
         
@@ -166,10 +166,9 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to open file for writing execution times.\n";
             return 1;
         }
-
         for(int i = 0; i < n_servers; i++){
             auto start = std::chrono::high_resolution_clock::now();
-            auto r_join_s = inner_join(r_data_receive[i].tuples, s_data_receive[i].tuples);
+            auto r_join_s = inner_join(r_data_receive[i], s_data_receive[i]);
             auto finish = std::chrono::high_resolution_clock::now();
 
             // Calculate and print execution time
@@ -178,7 +177,7 @@ int main(int argc, char* argv[]) {
 
             // Save the execution time to the file
             output_file << "Server " << i << ": " << elapsed.count() << " seconds\n";
-        }    
+        }       
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }

@@ -48,7 +48,7 @@ axs[0].barh(categories[1], flow_join_no_skew['detect_skew'], color=colors[0])
 axs[0].set_title('No skew')
 axs[0].set_xlim(0, 0.5)
 axs[0].set_xlabel('Maximum Time (s)')
-axs[0].legend(['detect skew', 'process probe'], loc='upper right')
+axs[0].legend(['process probe', 'detect skew'], loc='upper right')
 
 # Plot skew
 axs[1].barh(categories, skew_data, color=[colors[1], colors[1]])
@@ -57,7 +57,7 @@ axs[1].barh(categories[1], flow_join_zipf['detect_skew'], color=colors[0])
 axs[1].set_title('Skew (Zipf 1.25)')
 axs[1].set_xlim(0, 0.5)
 axs[1].set_xlabel('Maximum Time (s)')
-axs[1].legend(['detect skew', 'process probe'], loc='upper right')
+axs[1].legend(['process probe', 'detect skew'], loc='upper right')
 
 plt.tight_layout()
 plt.savefig('comparison_joins.jpg', format='jpg')

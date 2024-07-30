@@ -1,6 +1,4 @@
-os
+time
 numpy==1.26.4
-defaultdict
 matplotlib.pyplot==3.8.4
 heapq
-pandas==2.2.2

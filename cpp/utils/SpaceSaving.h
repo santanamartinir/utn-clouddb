@@ -16,17 +16,19 @@ public:
 
     SpaceSaving(int k, DataStructure data_structure) : k(k), total_elements(0), data_structure(data_structure) {}
 
+    // Method to process a stream of elements
     void process(const std::vector<int>& stream) {
         for (const auto& element : stream) {
-            increment_or_add(element);
+            increment_or_add(element); // Increment or add element based on data structure
         }
         calculate_frequencies();
     }
 
+    // Method to get heavy hitters (elements with frequencies above a threshold)
     std::unordered_map<int, float> get_heavy_hitters(float threshold) const {
         std::unordered_map<int, float> heavy_hitters;
         for (const auto& counter : counters) {
-            if (counter.second.second > threshold) {
+            if (counter.second.second > threshold) { // Check if frequency exceeds threshold
                 heavy_hitters[counter.first] = counter.second.second;
             }
         }
@@ -34,15 +36,16 @@ public:
     }
 
 private:
-    int k;  // capacity k of the histogram
-    int total_elements; // total number of elements processed
-    std::unordered_map<int, std::pair<int, float>> counters;  // dictionary: hash table with count and frequency
+    int k; // Capacity k of the histogram
+    int total_elements; // Total number of elements processed
+    std::unordered_map<int, std::pair<int, float>> counters; // Dictionary: hash table with count and frequency
     DataStructure data_structure;
 
     // For heap and sorted array
     std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> min_heap;
     std::set<std::pair<int, int>> sorted_set;
 
+    // Method to increment count or add a new element based on data structure
     void increment_or_add(int element) {
         total_elements++;
         switch (data_structure) {

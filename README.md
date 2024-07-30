@@ -28,7 +28,8 @@ This project focuses on:
 - Evaluating data structures for tracking heavy hitters using the Space-Saving algorithm.
 
 ## Prerequisites
-C++ compiler with C++17 support.
+- C++ compiler with C++20 support (Tested with g++)
+- ZeroMQ networking library. On Linux, use: sudo apt install libzmq3-dev
 
 ## Run
 ### Generate and partition data
@@ -70,7 +71,10 @@ After generating and partitioning data, you can run the join algorithms. The pro
 - ``helper_functions.h``: Header file for helper functions.
 - ``SpaceSaving.h``: Header file for the Space-Saving algorithm.
 - ``SpacesSaving_update_rates.cpp``: C++ code to evaluate update rates of different data structures.
-- ``flow_join_local.cpp``: C++ code for distributed flow join implementation.
+- ``flow_join_local.cpp``: C++ code for distributed flow join implementation. Compile with
+```
+g++ -std=c++20 flow_join_local.cpp utils/helper_functions.cpp -o flow_join_local -lzmq
+```
 - ``hash_join_local.cpp``: C++ code for distributed hash join implementation.
 
 ## Contributors

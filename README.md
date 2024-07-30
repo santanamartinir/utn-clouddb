@@ -41,8 +41,8 @@ To generate and partition data, use the ``create_R_S.sh`` script. Run the follow
 
 - ``<seed>``: Random seed for data generation.
 - ``<alpha>``: Zipf distribution parameter.
-- ``<n_unique>``: Number of unique values.
-- ``<n_rows>``: Number of rows to generate.
+- ``<n_unique>``: Number of unique values (Number of tuples in R table)
+- ``<n_rows>``: Number of rows to generate (Number of tuples in S table)
 - ``<n_servers>``: Number of servers for data partitioning.
 
 Note: Remember to compile the given scripts in ``create_R_S.sh`` (in total 4) beforehand.

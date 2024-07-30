@@ -10,7 +10,7 @@ Flow-Join includes several key components:
 - **Adaptive Redistribution**: Adjusts the data redistribution strategy in real-time to balance the load across servers, minimizing the impact of skew on join performance.
 
 ## Table of Contents
-1. [Overview](Overview)
+1. Overview
 2. Prerequisites
 3. Run
 4. Scripts and Files
@@ -23,11 +23,12 @@ This project focuses on:
 
 - Generating Zipf-distributed data.
 - Partitioning data into files for distributed processing.
-- Implementing and testing join algorithms (e.g., hash join, inner join).
+- Implementing the flow join algorithm.
+- Implementing the hash join algorithm to compare.
 - Evaluating data structures for tracking heavy hitters using the Space-Saving algorithm.
 
 ## Prerequisites
-- C++ compiler with C++17 support.
+C++ compiler with C++17 support.
 
 ## Run
 ### Generate and partition data
@@ -45,7 +46,7 @@ To generate and partition data, use the ``create_R_S.sh`` script. Run the follow
 
 Note: Remember to compile the given scripts in ``create_R_S.sh`` (in total 4) beforehand.
 
-### Run Joins
+### Run joins
 After generating and partitioning data, you can run the join algorithms. The provided executables for ``flow_join_local`` and ``hash_join_local`` can be used as follows:
 
 ```

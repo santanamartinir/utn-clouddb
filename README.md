@@ -45,7 +45,7 @@ To generate and partition data, use the ``create_R_S.sh`` script. Run the follow
 - ``<n_rows>``: Number of rows to generate (Number of tuples in S table)
 - ``<n_servers>``: Number of servers for data partitioning.
 
-Note: Remember to compile the given scripts in ``create_R_S.sh`` (in total 4) beforehand.
+Note: Remember to compile the given scripts in ``create_R_S.sh`` (in total 4) beforehand (See Scripts and Files).
 
 ### Run joins
 After generating and partitioning data, you can run the join algorithms. The provided executables for ``flow_join_local`` and ``hash_join_local`` can be used as follows:

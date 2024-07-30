@@ -29,7 +29,10 @@ This project focuses on:
 
 ## Prerequisites
 - C++ compiler with C++20 support (Tested with g++)
-- ZeroMQ networking library. On Linux, use: sudo apt install libzmq3-dev
+- ZeroMQ networking library. On Linux use:
+```
+sudo apt install libzmq3-dev
+```
 
 ## Run
 ### Generate and partition data

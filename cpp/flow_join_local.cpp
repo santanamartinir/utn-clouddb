@@ -137,8 +137,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        auto start = std::chrono::high_resolution_clock::now(); // Start time
         // Estimate heavy hitters using SpaceSaving algorithm
-        SpaceSaving::DataStructure ds = SpaceSaving::HashTableOnly; // Define here data structure to be use
+        SpaceSaving::DataStructure ds = SpaceSaving::SortedArray; // Define here data structure to be use
         int k = 128;  // Capacity of the histogram for heavy hitter detection
         SpaceSaving ss(k, ds);
         
@@ -146,6 +147,12 @@ int main(int argc, char* argv[]) {
 
         float threshold = 0.01;  // Define a threshold
         auto heavy_hitters = ss.get_heavy_hitters(threshold);
+
+        auto end_time = std::chrono::high_resolution_clock::now(); // End time
+
+        // Calculate and print execution time
+        std::chrono::duration<double> elapsed = end_time - start;
+        std::cout << "Heavy hitter detection took " << elapsed.count() << " seconds.\n";
 
         // Print detected heavy hitters
         std::cout << "Heavy Hitters:" << std::endl;

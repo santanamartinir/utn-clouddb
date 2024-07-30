@@ -75,19 +75,19 @@ After generating and partitioning data, you can run the join algorithms. The pro
 - ``SpaceSaving.h``: Header file for the Space-Saving algorithm.
 - ``SpacesSaving_update_rates.cpp``: C++ code to evaluate update rates of different data structures.
 ```
-g++ -std=c++20 SpaceSaving_update_rates.cpp helper_functions.cpp -o SpaceSaving_update_rates
+g++ -std=c++20 SpaceSaving_update_rates.cpp helper_functions.cpp -o SpaceSaving_update_rates -O3
 ```
 - ``flow_join_local.cpp``: C++ code for distributed flow join implementation. Compile with
 ```
-g++ -std=c++20 flow_join_local.cpp utils/helper_functions.cpp -o flow_join_local
+g++ -std=c++20 flow_join_local.cpp utils/helper_functions.cpp -o flow_join_local -O3
 ```
 - ``hash_join_local.cpp``: C++ code for distributed hash join implementation.
 ```
-g++ -std=c++20 hash_join_local.cpp utils/helper_functions.cpp -o hash_join_local
+g++ -std=c++20 hash_join_local.cpp utils/helper_functions.cpp -o hash_join_local -O3
 ```
 - ``hash_join_distributed.cpp``: C++ code for distributed hash join implementation.
 ```
-g++ -std=c++20 hash_join_distributed.cpp utils/helper_functions.cpp -o hash_join_distributed -lzmq
+g++ -std=c++20 hash_join_distributed.cpp utils/helper_functions.cpp -o hash_join_distributed -lzmq -O3
 ```
 - Helper files for ``create_R_S.sh``: ``split_file.cpp``, ``add_row_numbers.cpp``, ``gen_zipf.cpp``, ``gen_R.cpp``
 ```

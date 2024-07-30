@@ -38,11 +38,11 @@ To generate and partition data, use the ``create_R_S.sh`` script. Run the follow
 ./create_R_S.sh <seed> <alpha> <n_unique> <n_rows> <n_servers>
 ```
 
-- <seed>: Random seed for data generation.
-- <alpha>: Zipf distribution parameter.
-- <n_unique>: Number of unique values.
-- <n_rows>: Number of rows to generate.
-- <n_servers>: Number of servers for data partitioning.
+- ``<seed>``: Random seed for data generation.
+- ``<alpha>``: Zipf distribution parameter.
+- ``<n_unique>``: Number of unique values.
+- ``<n_rows>``: Number of rows to generate.
+- ``<n_servers>``: Number of servers for data partitioning.
 
 Note: Remember to compile the given scripts in ``create_R_S.sh`` (in total 4) beforehand.
 
@@ -58,11 +58,11 @@ After generating and partitioning data, you can run the join algorithms. The pro
 ./hash_join_local <n_servers> <num_r_tuples> <num_s_tuples> <R_folder> <S_folder>
 ```
 
-- <n_servers>: Number of servers.
-- <num_r_tuples>: Number of tuples in R data.
-- <num_s_tuples>: Number of tuples in S data.
-- <R_folder>: Folder containing R data files.
-- <S_folder>: Folder containing S data files.
+- ``<n_servers>``: Number of servers.
+- ``<num_r_tuples>``: Number of tuples in R data.
+- ``<num_s_tuples>``: Number of tuples in S data.
+- ``<R_folder>``: Folder containing R data files.
+- ``<S_folder>``: Folder containing S data files.
 
 ## Scripts and Files
 - ``create_R_S.sh``: Script to generate and partition Zipf-distributed data.
